@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import vn.cinema.app.dto.MovieListResponse;
+import vn.cinema.app.dto.response.MovieListResponse;
 import vn.cinema.app.mapper.CinemaMapper;
 import vn.cinema.app.mapper.MovieMapper;
 import vn.cinema.domain.cinema.repository.CinemaRepository;

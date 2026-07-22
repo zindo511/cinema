@@ -1,6 +1,8 @@
 package vn.cinema.domain.showtime.repository;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -10,9 +12,14 @@ import vn.cinema.domain.showtime.entity.ShowtimeStatus;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT showtime FROM Showtime showtime WHERE showtime.id = :showtimeId")
+    Optional<Showtime> findByIdForUpdate(@Param("showtimeId") Long showtimeId);
 
     @Query("""
             SELECT s.id AS id,

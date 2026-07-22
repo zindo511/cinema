@@ -2,8 +2,8 @@ package vn.cinema.app.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import vn.cinema.app.dto.ShowtimeResponse;
 import vn.cinema.app.dto.response.ShowtimeDetailResponse;
+import vn.cinema.app.dto.response.ShowtimeResponse;
 import vn.cinema.domain.showtime.entity.Showtime;
 import vn.cinema.domain.showtime.repository.ShowtimeSummary;
 

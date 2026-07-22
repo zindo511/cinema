@@ -5,13 +5,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import vn.cinema.app.dto.ChangeMovieStatusRequest;
-import vn.cinema.app.dto.CreateMovieRequest;
-import vn.cinema.app.dto.MovieDetailResponse;
-import vn.cinema.app.dto.MovieListResponse;
-import vn.cinema.app.dto.ShowtimeResponse;
-import vn.cinema.app.dto.UpdateMovieRequest;
+import vn.cinema.app.dto.request.ChangeMovieStatusRequest;
+import vn.cinema.app.dto.request.CreateMovieRequest;
+import vn.cinema.app.dto.request.UpdateMovieRequest;
+import vn.cinema.app.dto.response.MovieDetailResponse;
+import vn.cinema.app.dto.response.MovieListResponse;
+import vn.cinema.app.dto.response.ShowtimeResponse;
 import vn.cinema.app.service.MovieService;
 import vn.cinema.app.service.ShowtimeService;
 
@@ -26,6 +27,7 @@ public class MovieController {
     private final MovieService movieService;
     private final ShowtimeService showtimeService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<MovieDetailResponse> createMovie(@Valid @RequestBody CreateMovieRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(movieService.createMovie(request));
@@ -44,6 +46,7 @@ public class MovieController {
         return ResponseEntity.ok(movieService.getMovieDetails(id));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}")
     public ResponseEntity<MovieDetailResponse> updateMovie(
             @PathVariable Long id,
@@ -52,6 +55,7 @@ public class MovieController {
         return ResponseEntity.ok(movieService.updateMovie(id, request));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/status")
     public ResponseEntity<MovieDetailResponse> changeMovieStatus(
             @PathVariable Long id,
@@ -60,6 +64,7 @@ public class MovieController {
         return ResponseEntity.ok(movieService.changeMovieStatus(id, request.getStatus()));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<MovieDetailResponse> softDeleteMovie(@PathVariable Long id) {
         return ResponseEntity.ok(movieService.softDeleteMovie(id));

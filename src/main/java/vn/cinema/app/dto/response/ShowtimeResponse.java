@@ -1,4 +1,4 @@
-package vn.cinema.app.dto;
+package vn.cinema.app.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

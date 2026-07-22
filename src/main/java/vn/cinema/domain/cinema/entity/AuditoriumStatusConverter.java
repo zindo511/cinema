@@ -8,17 +8,11 @@ public class AuditoriumStatusConverter implements AttributeConverter<AuditoriumS
 
     @Override
     public Short convertToDatabaseColumn(AuditoriumStatus attribute) {
-        if (attribute == null) {
-            return null;
-        }
-        return (short) attribute.getValue();
+        return attribute == null ? null : (short) attribute.getValue();
     }
 
     @Override
     public AuditoriumStatus convertToEntityAttribute(Short dbData) {
-        if (dbData == null) {
-            return null;
-        }
-        return AuditoriumStatus.fromValue(dbData.intValue());
+        return dbData == null ? null : AuditoriumStatus.fromValue(dbData.intValue());
     }
 }

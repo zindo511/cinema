@@ -1,4 +1,4 @@
-package vn.cinema.app.dto;
+package vn.cinema.app.dto.request;
 
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;

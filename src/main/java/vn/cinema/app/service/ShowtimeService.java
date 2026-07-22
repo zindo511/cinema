@@ -3,14 +3,19 @@ package vn.cinema.app.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.cinema.app.dto.ShowtimeResponse;
 import vn.cinema.app.dto.request.CreateShowtimeRequest;
 import vn.cinema.app.dto.response.ShowtimeDetailResponse;
+import vn.cinema.app.dto.response.ShowtimeResponse;
+import vn.cinema.app.dto.response.ShowtimeSeatMapResponse;
+import vn.cinema.app.dto.response.ShowtimeSeatResponse;
 import vn.cinema.app.mapper.ShowtimeMapper;
+import vn.cinema.config.BookingProperties;
 import vn.cinema.domain.cinema.entity.Auditorium;
 import vn.cinema.domain.cinema.entity.Seat;
 import vn.cinema.domain.cinema.repository.AuditoriumRepository;
 import vn.cinema.domain.cinema.repository.SeatRepository;
+import vn.cinema.domain.common.exception.BusinessErrorCode;
+import vn.cinema.domain.common.exception.ConflictException;
 import vn.cinema.domain.common.exception.ResourceNotFoundException;
 import vn.cinema.domain.movie.entity.Movie;
 import vn.cinema.domain.movie.repository.MovieRepository;
@@ -44,6 +49,7 @@ public class ShowtimeService {
     private final ShowtimeRefundPort showtimeRefundPort;
     private final ShowtimeMapper showtimeMapper;
     private final Clock clock;
+    private final BookingProperties bookingProperties;
 
     // ==================== UC-03: Query ====================
 
@@ -129,7 +135,8 @@ public class ShowtimeService {
 
     @Transactional
     public ShowtimeDetailResponse cancelShowtime(Long showtimeId) {
-        Showtime showtime = findShowtime(showtimeId);
+        // Use the same first lock as booking creation so cancel and booking cannot commit concurrently.
+        Showtime showtime = findShowtimeForUpdate(showtimeId);
 
         // DRAFT: chưa mở bán → chắc chắn không có booking
         // OPEN: có thể đã có booking → gọi refund port để adapter tự xử lý
@@ -165,10 +172,50 @@ public class ShowtimeService {
         return finished.size();
     }
 
+    @Transactional(readOnly = true)
+    public ShowtimeSeatMapResponse viewSeatMap(Long showtimeId) {
+        Showtime showtime = findShowtime(showtimeId);
+
+        if (showtime.getStatus() != ShowtimeStatus.OPEN || !showtime.getStartTime().isAfter(clock.instant())) {
+            throw new ConflictException(
+                    BusinessErrorCode.SHOWTIME_NOT_BOOKABLE,
+                    "Showtime is not available for booking"
+            );
+        }
+
+        // Fetch showtime seats together with physical seat details in one query to avoid N+1.
+        List<ShowtimeSeat> showtimeSeats = showtimeSeatRepository.findAllWithSeatByShowtimeId(showtimeId);
+
+        // Map showtime seat snapshots to the DTOs returned by the seat map API.
+        List<ShowtimeSeatResponse> seatResponses = showtimeSeats.stream()
+                .map((seat) -> ShowtimeSeatResponse.builder()
+                        .showtimeSeatId(seat.getId())
+                        .label(seat.getSeat().getSeatRow() + seat.getSeat().getSeatNumber())
+                        .type(seat.getSeat().getSeatType())
+                        .price(seat.getPrice())
+                        .status(seat.getStatus())
+                        .build())
+                .toList();
+
+        return ShowtimeSeatMapResponse.builder()
+                .showtimeId(showtimeId)
+                .status(showtime.getStatus())
+                .startTime(showtime.getStartTime())
+                .expiresAfterSeconds(bookingProperties.holdDuration().getSeconds())
+                .seats(seatResponses)
+                .build();
+    }
+
     // ==================== Private Helpers ====================
 
     private Showtime findShowtime(Long showtimeId) {
         return showtimeRepository.findById(showtimeId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Showtime not found with ID: " + showtimeId));
+    }
+
+    private Showtime findShowtimeForUpdate(Long showtimeId) {
+        return showtimeRepository.findByIdForUpdate(showtimeId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Showtime not found with ID: " + showtimeId));
     }

@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.cinema.app.dto.request.CreateAuditoriumRequest;
 import vn.cinema.app.dto.request.CreateCinemaRequest;
@@ -15,6 +16,7 @@ import vn.cinema.app.service.CinemaService;
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class CinemaController {
 
     private final CinemaService cinemaService;

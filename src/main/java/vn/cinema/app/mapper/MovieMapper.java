@@ -6,10 +6,10 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.mapstruct.NullValuePropertyMappingStrategy;
-import vn.cinema.app.dto.CreateMovieRequest;
-import vn.cinema.app.dto.MovieDetailResponse;
-import vn.cinema.app.dto.MovieListResponse;
-import vn.cinema.app.dto.UpdateMovieRequest;
+import vn.cinema.app.dto.request.CreateMovieRequest;
+import vn.cinema.app.dto.request.UpdateMovieRequest;
+import vn.cinema.app.dto.response.MovieDetailResponse;
+import vn.cinema.app.dto.response.MovieListResponse;
 import vn.cinema.domain.movie.entity.Genre;
 import vn.cinema.domain.movie.entity.Movie;
 
