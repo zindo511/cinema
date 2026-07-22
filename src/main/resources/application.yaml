@@ -22,3 +22,7 @@ cinema:
   time-zone: Asia/Ho_Chi_Minh
   booking:
     hold-duration: 10m
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: 900000 # 15 phút
