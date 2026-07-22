@@ -18,7 +18,6 @@ public class ShowtimeSeatMapResponse {
     private Long showtimeId;
     private ShowtimeStatus status;
     private Instant startTime;
-    private long expiresAfterSeconds;
 
     @Builder.Default
     private List<ShowtimeSeatResponse> seats = List.of();

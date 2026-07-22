@@ -18,12 +18,12 @@ class GlobalExceptionHandlerTests {
         GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
         ResponseEntity<Map<String, Object>> response = handler.handleConflict(
-                new ConflictException(BusinessErrorCode.SEAT_NOT_AVAILABLE, "Seat is no longer available")
+                new ConflictException(BusinessErrorCode.CONFLICT, "Resource is no longer available")
         );
 
         assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("SEAT_NOT_AVAILABLE", response.getBody().get("code"));
-        assertEquals("Seat is no longer available", response.getBody().get("message"));
+        assertEquals("CONFLICT", response.getBody().get("code"));
+        assertEquals("Resource is no longer available", response.getBody().get("message"));
     }
 }

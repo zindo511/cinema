@@ -5,7 +5,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import vn.cinema.domain.common.exception.AuthenticationRequiredException;
 import vn.cinema.domain.common.exception.BusinessErrorCode;
 import vn.cinema.domain.common.exception.BusinessRuleException;
 import vn.cinema.domain.common.exception.ConflictException;
@@ -21,11 +20,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException ex) {
         return error(HttpStatus.NOT_FOUND, "Not Found", ex.getCode(), ex.getMessage());
-    }
-
-    @ExceptionHandler(AuthenticationRequiredException.class)
-    public ResponseEntity<Map<String, Object>> handleAuthenticationRequired(AuthenticationRequiredException ex) {
-        return error(HttpStatus.UNAUTHORIZED, "Unauthorized", ex.getCode(), ex.getMessage());
     }
 
     @ExceptionHandler(ConflictException.class)

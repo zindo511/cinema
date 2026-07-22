@@ -9,7 +9,6 @@ import vn.cinema.app.dto.response.ShowtimeResponse;
 import vn.cinema.app.dto.response.ShowtimeSeatMapResponse;
 import vn.cinema.app.dto.response.ShowtimeSeatResponse;
 import vn.cinema.app.mapper.ShowtimeMapper;
-import vn.cinema.config.BookingProperties;
 import vn.cinema.domain.cinema.entity.Auditorium;
 import vn.cinema.domain.cinema.entity.Seat;
 import vn.cinema.domain.cinema.repository.AuditoriumRepository;
@@ -49,7 +48,6 @@ public class ShowtimeService {
     private final ShowtimeRefundPort showtimeRefundPort;
     private final ShowtimeMapper showtimeMapper;
     private final Clock clock;
-    private final BookingProperties bookingProperties;
 
     // ==================== UC-03: Query ====================
 
@@ -135,8 +133,7 @@ public class ShowtimeService {
 
     @Transactional
     public ShowtimeDetailResponse cancelShowtime(Long showtimeId) {
-        // Use the same first lock as booking creation so cancel and booking cannot commit concurrently.
-        Showtime showtime = findShowtimeForUpdate(showtimeId);
+        Showtime showtime = findShowtime(showtimeId);
 
         // DRAFT: chưa mở bán → chắc chắn không có booking
         // OPEN: có thể đã có booking → gọi refund port để adapter tự xử lý
@@ -201,7 +198,6 @@ public class ShowtimeService {
                 .showtimeId(showtimeId)
                 .status(showtime.getStatus())
                 .startTime(showtime.getStartTime())
-                .expiresAfterSeconds(bookingProperties.holdDuration().getSeconds())
                 .seats(seatResponses)
                 .build();
     }
@@ -210,12 +206,6 @@ public class ShowtimeService {
 
     private Showtime findShowtime(Long showtimeId) {
         return showtimeRepository.findById(showtimeId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Showtime not found with ID: " + showtimeId));
-    }
-
-    private Showtime findShowtimeForUpdate(Long showtimeId) {
-        return showtimeRepository.findByIdForUpdate(showtimeId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Showtime not found with ID: " + showtimeId));
     }

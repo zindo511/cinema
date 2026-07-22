@@ -20,8 +20,6 @@ spring:
 
 cinema:
   time-zone: Asia/Ho_Chi_Minh
-  booking:
-    hold-duration: 10m
 
 jwt:
   secret: ${JWT_SECRET}

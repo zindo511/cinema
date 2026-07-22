@@ -1,8 +1,6 @@
 package vn.cinema.domain.showtime.repository;
 
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -24,20 +22,6 @@ public interface ShowtimeSeatRepository extends JpaRepository<ShowtimeSeat, Long
         ORDER BY LENGTH(seat.seatRow), seat.seatRow, seat.seatNumber
         """)
     List<ShowtimeSeat> findAllWithSeatByShowtimeId(@Param("showtimeId") Long showtimeId);
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("""
-            SELECT showtimeSeat
-            FROM ShowtimeSeat showtimeSeat
-            JOIN FETCH showtimeSeat.seat seat
-            WHERE showtimeSeat.showtime.id = :showtimeId
-              AND showtimeSeat.id IN :seatIds
-            ORDER BY showtimeSeat.id
-            """)
-    List<ShowtimeSeat> findAllByIdForUpdate(
-            @Param("showtimeId") Long showtimeId,
-            @Param("seatIds") List<Long> seatIds
-    );
 
     long countByShowtimeId(Long showtimeId);
 }
