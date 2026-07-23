@@ -2,14 +2,19 @@ package vn.cinema.api;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.cinema.app.dto.request.CreateShowtimeRequest;
 import vn.cinema.app.dto.response.ShowtimeDetailResponse;
+import vn.cinema.app.dto.response.ShowtimeResponse;
 import vn.cinema.app.dto.response.ShowtimeSeatMapResponse;
 import vn.cinema.app.service.ShowtimeService;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/showtimes")
@@ -43,5 +48,12 @@ public class ShowtimeController {
         return ResponseEntity.ok(showtimeService.viewSeatMap(showtimeId));
     }
 
-
+    @GetMapping("/{movieId}/showtimes")
+    public ResponseEntity<List<ShowtimeResponse>> getAvailableShowtimes(
+            @PathVariable Long movieId,
+            @RequestParam Long cinemaId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        return ResponseEntity.ok(showtimeService.getAvailableShowtimes(movieId, cinemaId, date));
+    }
 }
