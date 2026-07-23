@@ -42,4 +42,6 @@ public class ShowtimeController {
     public ResponseEntity<ShowtimeSeatMapResponse> viewSeatMap(@PathVariable Long showtimeId) {
         return ResponseEntity.ok(showtimeService.viewSeatMap(showtimeId));
     }
+
+
 }

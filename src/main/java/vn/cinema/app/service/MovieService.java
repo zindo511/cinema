@@ -40,6 +40,13 @@ public class MovieService {
     private final CinemaMapper cinemaMapper;
     private final Clock clock;
 
+    /**
+     * Tạo mới một bộ phim trong hệ thống với trạng thái mặc định COMING_SOON
+     * và ánh xạ danh sách các thể loại tương ứng.
+     *
+     * @param request Thông tin phim cần tạo mới
+     * @return Thông tin chi tiết phim vừa được tạo
+     */
     @Transactional
     public MovieDetailResponse createMovie(CreateMovieRequest request) {
         Movie movie = movieMapper.toEntity(request);
@@ -48,6 +55,14 @@ public class MovieService {
         return movieMapper.toDetailResponse(movieRepository.save(movie));
     }
 
+    /**
+     * Lấy danh sách các bộ phim đang chiếu (NOW_SHOWING) có lịch chiếu mở (OPEN)
+     * tính đến thời điểm hiện tại. Hỗ trợ lọc theo thể loại và từ khóa tìm kiếm.
+     *
+     * @param genre Thể loại phim cần lọc (tùy chọn)
+     * @param keyword Từ khóa tìm kiếm theo tên phim (tùy chọn)
+     * @return Danh sách phim đang chiếu thỏa mãn điều kiện
+     */
     @Transactional(readOnly = true)
     public List<MovieListResponse> getNowShowingMovies(String genre, String keyword) {
         return movieRepository.findNowShowingMovies(
@@ -61,6 +76,13 @@ public class MovieService {
                 .toList();
     }
 
+    /**
+     * Lấy thông tin chi tiết của một bộ phim theo ID, bao gồm danh sách các thể loại
+     * và danh sách các rạp chiếu đang có lịch chiếu mở cho bộ phim này trong tương lai.
+     *
+     * @param movieId ID của phim cần lấy thông tin
+     * @return Thông tin chi tiết của bộ phim và các rạp đang chiếu
+     */
     @Transactional(readOnly = true)
     public MovieDetailResponse getMovieDetails(Long movieId) {
         // 1. Fetch movie or throw error
@@ -89,6 +111,14 @@ public class MovieService {
         return response;
     }
 
+    /**
+     * Cập nhật thông tin chi tiết của bộ phim (tên, mô tả, thời lượng, poster, trailer, 
+     * ngày phát hành, danh sách thể loại...).
+     *
+     * @param movieId ID của phim cần cập nhật
+     * @param request Dữ liệu cập nhật phim
+     * @return Thông tin chi tiết phim sau khi cập nhật
+     */
     @Transactional
     public MovieDetailResponse updateMovie(Long movieId, UpdateMovieRequest request) {
         Movie movie = findMovie(movieId);
@@ -99,6 +129,14 @@ public class MovieService {
         return movieMapper.toDetailResponse(movie);
     }
 
+    /**
+     * Thay đổi trạng thái hoạt động của bộ phim (chẳng hạn COMING_SOON -> NOW_SHOWING, STOPPED, ...).
+     * Nếu trạng thái mới là DELETED, chuyển hướng sang xử lý xóa mềm (soft delete).
+     *
+     * @param movieId ID của phim cần thay đổi trạng thái
+     * @param status Trạng thái mới của phim
+     * @return Thông tin chi tiết phim sau khi đổi trạng thái
+     */
     @Transactional
     public MovieDetailResponse changeMovieStatus(Long movieId, MovieStatus status) {
         if (status == MovieStatus.DELETED) {
@@ -110,6 +148,13 @@ public class MovieService {
         return movieMapper.toDetailResponse(movie);
     }
 
+    /**
+     * Thực hiện xóa mềm (soft delete) bộ phim.
+     * Kiểm tra nếu bộ phim đã có vé đặt thành công (CONFIRMED bookings) thì không cho phép xóa.
+     *
+     * @param movieId ID của phim cần xóa mềm
+     * @return Thông tin chi tiết phim sau khi xóa mềm
+     */
     @Transactional
     public MovieDetailResponse softDeleteMovie(Long movieId) {
         Movie movie = findMovie(movieId);
@@ -120,11 +165,25 @@ public class MovieService {
         return movieMapper.toDetailResponse(movie);
     }
 
+    /**
+     * Helper method hỗ trợ tìm kiếm entity Movie theo ID kèm danh sách thể loại,
+     * ném ra ResourceNotFoundException nếu không tìm thấy.
+     *
+     * @param movieId ID của phim cần tìm
+     * @return Entity Movie tìm được
+     */
     private Movie findMovie(Long movieId) {
         return movieRepository.findByIdWithGenres(movieId)
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found with ID: " + movieId));
     }
 
+    /**
+     * Helper method kiểm tra và ánh xạ danh sách ID thể loại (genreIds) sang danh sách entity Genre.
+     * Ném ra ResourceNotFoundException nếu có bất kỳ ID thể loại nào không tồn tại.
+     *
+     * @param genreIds Tập hợp các ID thể loại cần tìm
+     * @return Tập hợp các entity Genre tương ứng
+     */
     private Set<Genre> resolveGenres(Set<Long> genreIds) {
         if (genreIds == null || genreIds.isEmpty()) {
             return new HashSet<>();
@@ -143,6 +202,13 @@ public class MovieService {
         return new HashSet<>(genres);
     }
 
+    /**
+     * Helper method chuẩn hóa chuỗi tìm kiếm đầu vào (cắt khoảng trắng thừa),
+     * trả về null nếu chuỗi rỗng hoặc chỉ chứa khoảng trắng.
+     *
+     * @param value Chuỗi gốc đầu vào
+     * @return Chuỗi đã được chuẩn hóa hoặc null
+     */
     private String normalize(String value) {
         if (value == null || value.isBlank()) {
             return null;
