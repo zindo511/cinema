@@ -1,4 +1,4 @@
-package vn.cinema.domain.user.service;
+package vn.cinema.app.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -21,6 +21,7 @@ import vn.cinema.domain.user.repository.UserRepository;
 import vn.cinema.domain.user.entity.User;
 import vn.cinema.domain.user.entity.UserRole;
 import vn.cinema.domain.user.entity.UserStatus;
+import vn.cinema.infrastructure.security.JwtTokenService;
 import vn.cinema.infrastructure.utility.RefreshTokenGenerator;
 import vn.cinema.infrastructure.utility.RefreshTokenHasher;
 

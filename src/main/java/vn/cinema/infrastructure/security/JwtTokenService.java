@@ -1,4 +1,4 @@
-package vn.cinema.domain.user.service;
+package vn.cinema.infrastructure.security;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

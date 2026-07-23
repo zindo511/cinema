@@ -13,9 +13,9 @@ import java.util.Set;
 @Table(name = "movie")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Movie extends BaseAuditEntity {
 
     @Id

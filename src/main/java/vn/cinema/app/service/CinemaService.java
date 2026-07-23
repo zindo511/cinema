@@ -13,6 +13,8 @@ import vn.cinema.domain.cinema.entity.*;
 import vn.cinema.domain.cinema.repository.AuditoriumRepository;
 import vn.cinema.domain.cinema.repository.CinemaRepository;
 import vn.cinema.domain.cinema.repository.SeatRepository;
+import vn.cinema.domain.common.exception.BusinessErrorCode;
+import vn.cinema.domain.common.exception.BusinessRuleException;
 import vn.cinema.domain.common.exception.ResourceNotFoundException;
 
 import java.util.*;
@@ -34,6 +36,27 @@ public class CinemaService {
         Cinema cinema = cinemaMapper.toEntity(request);
         cinema.setStatus(CinemaStatus.ACTIVE);
         return cinemaMapper.toDetailResponse(cinemaRepository.save(cinema));
+    }
+
+    public List<String> getCityNames() {
+        return cinemaRepository.findDistinctCityNames();
+    }
+
+    public List<CinemaDetailResponse> getCinemas(String city) {
+        if (city == null || city.isBlank()) {
+            List<Cinema> cinemas = cinemaRepository.findAllByStatus(CinemaStatus.ACTIVE);
+            return cinemas.stream().map(cinemaMapper::toDetailResponse).toList();
+        }
+        return cinemaRepository.findDistinctByCinema(city.trim(), CinemaStatus.ACTIVE);
+    }
+
+    public CinemaDetailResponse getDetailsCinema(Long cinemaId) {
+        if (cinemaId == null || cinemaId < 1) {
+            throw new BusinessRuleException(BusinessErrorCode.INVALID_REQUEST, "Cinema ID must be positive");
+        }
+        Cinema cinema = cinemaRepository.findById(cinemaId)
+                .orElseThrow(() -> new ResourceNotFoundException(BusinessErrorCode.RESOURCE_NOT_FOUND, "CinemaId not found with ID: " + cinemaId));
+        return cinemaMapper.toDetailResponse(cinema);
     }
 
     // ==================== Auditorium ====================

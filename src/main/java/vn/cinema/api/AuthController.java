@@ -14,7 +14,7 @@ import vn.cinema.app.dto.request.LoginRequest;
 import vn.cinema.app.dto.request.RefreshRequest;
 import vn.cinema.app.dto.request.RegisterRequest;
 import vn.cinema.app.dto.response.LoginResponse;
-import vn.cinema.domain.user.service.AuthService;
+import vn.cinema.app.service.AuthService;
 
 @RestController
 @RequestMapping("/api/v1/auth")

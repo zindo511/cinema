@@ -6,45 +6,39 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import vn.cinema.app.dto.request.CreateAuditoriumRequest;
 import vn.cinema.app.dto.request.CreateCinemaRequest;
-import vn.cinema.app.dto.request.UpdateSeatLayoutRequest;
-import vn.cinema.app.dto.response.AuditoriumDetailResponse;
 import vn.cinema.app.dto.response.CinemaDetailResponse;
 import vn.cinema.app.service.CinemaService;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/cinemas")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class CinemaController {
 
     private final CinemaService cinemaService;
 
-    // ==================== Cinema ====================
-
-    @PostMapping("/cinemas")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping
     public ResponseEntity<CinemaDetailResponse> createCinema(
             @Valid @RequestBody CreateCinemaRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(cinemaService.createCinema(request));
     }
 
-    // ==================== Auditorium ====================
-
-    @PostMapping("/auditoriums")
-    public ResponseEntity<AuditoriumDetailResponse> createAuditorium(
-            @Valid @RequestBody CreateAuditoriumRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(cinemaService.createAuditorium(request));
+    @GetMapping("/cities")
+    public ResponseEntity<List<String>> getCities() {
+        return ResponseEntity.ok(cinemaService.getCityNames());
     }
 
-    // ==================== Seat Layout ====================
+    @GetMapping
+    public ResponseEntity<List<CinemaDetailResponse>> getCinemas(@RequestParam(required = false) String city) {
+        return ResponseEntity.ok(cinemaService.getCinemas(city));
+    }
 
-    @PutMapping("/auditoriums/{auditoriumId}/seats")
-    public ResponseEntity<AuditoriumDetailResponse> updateSeatLayout(
-            @PathVariable Long auditoriumId,
-            @Valid @RequestBody UpdateSeatLayoutRequest request) {
-        return ResponseEntity.ok(cinemaService.updateSeatLayout(auditoriumId, request));
+    @GetMapping("/{cinemaId}")
+    public ResponseEntity<CinemaDetailResponse> getDetailsCinema(@PathVariable Long cinemaId) {
+        return ResponseEntity.ok(cinemaService.getDetailsCinema(cinemaId));
     }
 }
