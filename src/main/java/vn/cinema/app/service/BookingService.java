@@ -14,6 +14,7 @@ import vn.cinema.domain.booking.repository.BookingSeatRepository;
 import vn.cinema.domain.cinema.entity.Seat;
 import vn.cinema.domain.common.exception.BusinessErrorCode;
 import vn.cinema.domain.common.exception.ConflictException;
+import vn.cinema.domain.common.exception.BusinessRuleException;
 import vn.cinema.domain.common.exception.ResourceNotFoundException;
 import vn.cinema.domain.showtime.entity.Showtime;
 import vn.cinema.domain.showtime.entity.ShowtimeSeat;
@@ -74,7 +75,7 @@ public class BookingService {
      * @throws ConflictException           nếu idempotencyKey bị tái sử dụng với payload khác,
      *                                     hoặc ghế không còn trạng thái AVAILABLE
      * @throws ResourceNotFoundException   nếu suất chiếu hoặc ghế không tồn tại
-     * @throws IllegalArgumentException    nếu danh sách ghế rỗng hoặc vượt quá 8 ghế
+     * @throws BusinessRuleException       nếu danh sách ghế rỗng hoặc vượt quá 8 ghế (INVALID_REQUEST)
      */
     @Transactional
     public BookingResponse createBooking(
@@ -215,19 +216,19 @@ public class BookingService {
      * @param showtimeId ID của suất chiếu chứa các ghế
      * @param seatIds    danh sách ID ghế cần khoá (tối đa 8, không được rỗng)
      * @return danh sách {@link ShowtimeSeat} đã được khoá, sẵn sàng để giữ chỗ
-     * @throws IllegalArgumentException    nếu danh sách ghế rỗng hoặc vượt quá 8
-     * @throws ResourceNotFoundException   nếu có ghế không tồn tại hoặc không thuộc suất chiếu
+     * @throws BusinessRuleException       nếu danh sách ghế rỗng hoặc vượt quá 8 (INVALID_REQUEST)
      * @throws ConflictException           nếu có ghế không ở trạng thái AVAILABLE
+     * @throws ResourceNotFoundException   nếu có ghế không tồn tại hoặc không thuộc suất chiếu
      */
     @Transactional
     public List<ShowtimeSeat> lockSelectedShowtimeSeats(Long showtimeId, List<Long> seatIds) {
         // Check showtimeSeat
         if (seatIds == null || seatIds.isEmpty()) {
-            throw new IllegalArgumentException("Seat IDs cannot be null or empty");
+            throw new BusinessRuleException(BusinessErrorCode.INVALID_REQUEST, "Seat IDs cannot be null or empty");
         }
 
         if (seatIds.size() > 8) {
-            throw new IllegalArgumentException("A booking cannot contain more than 8 seats");
+            throw new BusinessRuleException(BusinessErrorCode.INVALID_REQUEST, "A booking cannot contain more than 8 seats");
         }
 
         // Sắp xếp danh sách seatIds để chống Deadlock
