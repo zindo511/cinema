@@ -57,4 +57,22 @@ public class ShowtimeSeat {
         status = ShowtimeSeatStatus.HELD;
         heldAt = now;
     }
+
+    public void book() {
+        if (status != ShowtimeSeatStatus.HELD) {
+            throw new IllegalStateException("Only held seats can be booked");
+        }
+
+        status = ShowtimeSeatStatus.BOOKED;
+        heldAt = null;
+    }
+
+    public void release() {
+        if (status != ShowtimeSeatStatus.HELD) {
+            throw new IllegalStateException("Only held seats can be released");
+        }
+
+        status = ShowtimeSeatStatus.AVAILABLE;
+        heldAt = null;
+    }
 }

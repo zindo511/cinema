@@ -160,6 +160,29 @@ public class BookingService {
         return bookingResponse;
     }
 
+    // tìm tất cả booking PENDING đã hết hạn, chuyển sang EXPIRED, showtimeSeat: HELD -> AVAILABLE
+    @Transactional
+    public int expireBookingsAndReleaseSeats() {
+        Instant now = clock.instant();
+
+        // Tìm các booking hết hạn
+        List<Booking> expiredBooking = bookingRepository.findAllByStatusAndExpiresAtBefore(
+                BookingStatus.PENDING, now
+        );
+
+        expiredBooking.forEach(booking -> {
+            // booking: PENDING -> EXPIRED
+            booking.expire(now);
+
+            // ShowtimeSeat: HELD -> AVAILABLE
+            booking.getBookingSeats().forEach(bookingSeat -> {
+                bookingSeat.getShowtimeSeat().release();
+            });
+        });
+
+        return expiredBooking.size();
+    }
+
     /**
      * Kiểm tra tính hợp lệ của suất chiếu trước khi cho phép đặt vé.
      *
