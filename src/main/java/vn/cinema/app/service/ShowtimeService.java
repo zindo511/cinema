@@ -14,7 +14,6 @@ import vn.cinema.domain.cinema.entity.Seat;
 import vn.cinema.domain.cinema.repository.AuditoriumRepository;
 import vn.cinema.domain.cinema.repository.SeatRepository;
 import vn.cinema.domain.common.exception.BusinessErrorCode;
-import vn.cinema.domain.common.exception.ConflictException;
 import vn.cinema.domain.common.exception.ResourceNotFoundException;
 import vn.cinema.domain.movie.entity.Movie;
 import vn.cinema.domain.movie.repository.MovieRepository;
@@ -73,6 +72,12 @@ public class ShowtimeService {
                 ).stream()
                 .map(showtimeMapper::toResponse)
                 .toList();
+    }
+
+    public ShowtimeDetailResponse getShowtimeDetails(Long showtimeId) {
+        Showtime showtime = showtimeRepository.findById(showtimeId)
+                .orElseThrow(() -> new ResourceNotFoundException(BusinessErrorCode.RESOURCE_NOT_FOUND, "Showtime not found with: " + showtimeId));
+        return showtimeMapper.toDetailResponse(showtime);
     }
 
     // ==================== UC-10: Create Showtime ====================
@@ -173,12 +178,7 @@ public class ShowtimeService {
     public ShowtimeSeatMapResponse viewSeatMap(Long showtimeId) {
         Showtime showtime = findShowtime(showtimeId);
 
-        if (showtime.getStatus() != ShowtimeStatus.OPEN || !showtime.getStartTime().isAfter(clock.instant())) {
-            throw new ConflictException(
-                    BusinessErrorCode.SHOWTIME_NOT_BOOKABLE,
-                    "Showtime is not available for booking"
-            );
-        }
+        showtime.ensureBookable(clock.instant());
 
         // Fetch showtime seats together with physical seat details in one query to avoid N+1.
         List<ShowtimeSeat> showtimeSeats = showtimeSeatRepository.findAllWithSeatByShowtimeId(showtimeId);

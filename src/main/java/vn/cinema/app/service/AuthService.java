@@ -66,14 +66,14 @@ public class AuthService {
         );
 
         // 2. Tạo access token
-        String accessToken = jwtTokenService.generateAccessToken(authentication);
-
-        // 3. Tạo refresh token + lưu DB
-        String rawRefreshToken = refreshTokenGenerator.generate();
-
         User user = userRepository.findByEmailIgnoreCase(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         BusinessErrorCode.RESOURCE_NOT_FOUND, "User not found"));
+
+        String accessToken = jwtTokenService.generateAccessToken(authentication, user.getId());
+
+        // 3. Tạo refresh token + lưu DB
+        String rawRefreshToken = refreshTokenGenerator.generate();
 
         RefreshToken refreshTokenEntity = RefreshToken.builder()
                 .user(user)
@@ -165,7 +165,7 @@ public class AuthService {
                 authorities
         );
 
-        String accessToken = jwtTokenService.generateAccessToken(authentication);
+        String accessToken = jwtTokenService.generateAccessToken(authentication, user.getId());
 
         return new LoginResponse(
                 accessToken,

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import vn.cinema.domain.common.entity.BaseAuditEntity;
 import vn.cinema.domain.cinema.entity.Auditorium;
+import vn.cinema.domain.common.exception.BusinessErrorCode;
+import vn.cinema.domain.common.exception.ConflictException;
 import vn.cinema.domain.movie.entity.Movie;
 
 import java.math.BigDecimal;
@@ -75,5 +77,17 @@ public class Showtime extends BaseAuditEntity {
                     "Cannot complete showtime: current status is " + status + ", expected OPEN");
         }
         this.status = ShowtimeStatus.COMPLETED;
+    }
+
+    /**
+     * validate for booking
+     */
+    public void ensureBookable(Instant now) {
+        if (status != ShowtimeStatus.OPEN || !startTime.isAfter(now)) {
+            throw new ConflictException(
+                    BusinessErrorCode.SHOWTIME_NOT_BOOKABLE,
+                    "Showtime is not available for booking"
+            );
+        }
     }
 }

@@ -23,7 +23,7 @@ public class JwtTokenService {
     private final JwtProperties jwtProperties;
     private final Clock clock;
 
-    public String generateAccessToken(Authentication authentication) {
+    public String generateAccessToken(Authentication authentication, Long userId) {
 
         Instant now = clock.instant();
         List<String> authorities = authentication.getAuthorities().stream()
@@ -33,6 +33,7 @@ public class JwtTokenService {
         JwtClaimsSet claimsSet = JwtClaimsSet.builder()
                 .subject(authentication.getName())
                 .claim("authorities", authorities)
+                .claim("userId", userId)
                 .issuedAt(now)
                 .expiresAt(now.plusMillis(jwtProperties.expirationMs))
                 .build();

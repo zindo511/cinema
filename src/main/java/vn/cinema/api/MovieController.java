@@ -2,6 +2,7 @@ package vn.cinema.api;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,8 +12,11 @@ import vn.cinema.app.dto.request.CreateMovieRequest;
 import vn.cinema.app.dto.request.UpdateMovieRequest;
 import vn.cinema.app.dto.response.MovieDetailResponse;
 import vn.cinema.app.dto.response.MovieListResponse;
+import vn.cinema.app.dto.response.ShowtimeResponse;
 import vn.cinema.app.service.MovieService;
+import vn.cinema.app.service.ShowtimeService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -21,6 +25,7 @@ import java.util.List;
 public class MovieController {
 
     private final MovieService movieService;
+    private final ShowtimeService showtimeService;
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
@@ -39,6 +44,15 @@ public class MovieController {
     @GetMapping("/{id}")
     public ResponseEntity<MovieDetailResponse> getMovieDetails(@PathVariable Long id) {
         return ResponseEntity.ok(movieService.getMovieDetails(id));
+    }
+
+    @GetMapping("/{movieId}/showtimes")
+    public ResponseEntity<List<ShowtimeResponse>> getAvailableShowtimes(
+            @PathVariable Long movieId,
+            @RequestParam Long cinemaId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        return ResponseEntity.ok(showtimeService.getAvailableShowtimes(movieId, cinemaId, date));
     }
 
     @PreAuthorize("hasRole('ADMIN')")

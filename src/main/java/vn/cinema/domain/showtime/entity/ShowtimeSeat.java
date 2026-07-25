@@ -3,9 +3,12 @@ package vn.cinema.domain.showtime.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import vn.cinema.domain.cinema.entity.Seat;
+import vn.cinema.domain.common.exception.BusinessErrorCode;
+import vn.cinema.domain.common.exception.SeatNotAvailableException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Objects;
 
 @Entity
 @Table(name = "showtime_seat", uniqueConstraints = {
@@ -43,4 +46,15 @@ public class ShowtimeSeat {
     @Column(name = "version", nullable = false)
     @Builder.Default
     private Integer version = 0;
+
+    public void hold(Instant now) {
+        Objects.requireNonNull(now, "now must not be null");
+
+        if (status != ShowtimeSeatStatus.AVAILABLE) {
+            throw new SeatNotAvailableException(BusinessErrorCode.SEAT_NOT_AVAILABLE, "Cannot hold seat with id: " + id);
+        }
+
+        status = ShowtimeSeatStatus.HELD;
+        heldAt = now;
+    }
 }

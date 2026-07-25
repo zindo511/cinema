@@ -21,7 +21,6 @@ public class BusinessRuleException extends RuntimeException {
         super(message);
         this.errorCode = Objects.requireNonNull(errorCode, "errorCode must not be null");
     }
-
     public String getCode() {
         return errorCode;
     }
