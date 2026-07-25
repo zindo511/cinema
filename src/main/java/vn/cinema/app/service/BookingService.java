@@ -22,7 +22,6 @@ import vn.cinema.domain.showtime.repository.ShowtimeRepository;
 import vn.cinema.domain.showtime.repository.ShowtimeSeatRepository;
 import vn.cinema.infrastructure.utility.BookingCodeGenerator;
 
-import java.awt.print.Book;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -49,6 +48,34 @@ public class BookingService {
     private final BookingCodeGenerator bookingCodeGenerator;
     private final BookingMapper bookingMapper;
 
+    /**
+     * Tạo một đơn đặt vé mới cho khách hàng.
+     *
+     * <p>Quy trình xử lý:</p>
+     * <ol>
+     *   <li>Kiểm tra idempotency: nếu đã tồn tại booking với cùng idempotencyKey,
+     *       trả về kết quả cũ (tránh tạo trùng khi client retry). Nếu key trùng nhưng
+     *       payload khác thì ném {@link ConflictException}.</li>
+     *   <li>Validate suất chiếu: đảm bảo suất chiếu tồn tại, còn cho phép đặt vé,
+     *       và chưa quá hạn đặt trước (tối thiểu 30 phút trước giờ chiếu).</li>
+     *   <li>Khoá (lock) các ghế được chọn theo thứ tự ID tăng dần để tránh deadlock,
+     *       đồng thời kiểm tra trạng thái ghế phải là AVAILABLE.</li>
+     *   <li>Tính tổng tiền từ giá snapshot của từng ghế trong suất chiếu.</li>
+     *   <li>Tạo bản ghi Booking với trạng thái PENDING, thời hạn hết hạn 10 phút.</li>
+     *   <li>Tạo các bản ghi BookingSeat (snapshot thông tin ghế tại thời điểm đặt).</li>
+     *   <li>Chuyển trạng thái ghế từ AVAILABLE sang HELD.</li>
+     * </ol>
+     *
+     * @param customerId     ID của khách hàng thực hiện đặt vé
+     * @param showtimeId     ID của suất chiếu muốn đặt
+     * @param seatIds        danh sách ID các ghế muốn đặt (tối đa 8 ghế)
+     * @param idempotencyKey khoá idempotency do client gửi lên để tránh đặt trùng khi retry
+     * @return {@link BookingResponse} chứa thông tin booking và danh sách ghế đã đặt
+     * @throws ConflictException           nếu idempotencyKey bị tái sử dụng với payload khác,
+     *                                     hoặc ghế không còn trạng thái AVAILABLE
+     * @throws ResourceNotFoundException   nếu suất chiếu hoặc ghế không tồn tại
+     * @throws IllegalArgumentException    nếu danh sách ghế rỗng hoặc vượt quá 8 ghế
+     */
     @Transactional
     public BookingResponse createBooking(
             Long customerId,
@@ -132,7 +159,23 @@ public class BookingService {
         return bookingResponse;
     }
 
-    // PRIVATE HELPER
+    /**
+     * Kiểm tra tính hợp lệ của suất chiếu trước khi cho phép đặt vé.
+     *
+     * <p>Thực hiện các bước kiểm tra:</p>
+     * <ul>
+     *   <li>Suất chiếu phải tồn tại trong hệ thống.</li>
+     *   <li>Suất chiếu phải ở trạng thái cho phép đặt vé (gọi {@code ensureBookable}).</li>
+     *   <li>Thời gian hiện tại phải cách giờ chiếu ít nhất 30 phút
+     *       ({@link #MIN_BOOKING_LEAD_TIME}) – ngắt đặt vé online trước giờ chiếu.</li>
+     * </ul>
+     *
+     * @param showtimeId ID của suất chiếu cần kiểm tra
+     * @param now        thời điểm hiện tại (lấy từ {@link Clock})
+     * @return đối tượng {@link Showtime} hợp lệ, sẵn sàng để đặt vé
+     * @throws ResourceNotFoundException nếu không tìm thấy suất chiếu
+     * @throws ConflictException         nếu suất chiếu không thể đặt hoặc đã quá hạn đặt trước
+     */
     private Showtime validateShowtimeForBooking(Long showtimeId, Instant now) {
         Showtime showtime = showtimeRepository.findById(showtimeId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -154,6 +197,28 @@ public class BookingService {
         return showtime;
     }
 
+    /**
+     * Khoá (pessimistic lock) các ghế được chọn trong suất chiếu để đảm bảo
+     * không có giao dịch khác chiếm ghế cùng lúc.
+     *
+     * <p>Chi tiết xử lý:</p>
+     * <ul>
+     *   <li>Validate: danh sách ghế không được rỗng và tối đa 8 ghế.</li>
+     *   <li>Sắp xếp seatIds tăng dần và loại bỏ trùng lặp để tránh deadlock
+     *       khi nhiều giao dịch cùng khoá các ghế.</li>
+     *   <li>Sử dụng {@code SELECT ... FOR UPDATE} (qua repository) để khoá các bản ghi ghế.</li>
+     *   <li>Kiểm tra số lượng ghế trả về khớp với yêu cầu (phát hiện ghế không tồn tại
+     *       hoặc không thuộc suất chiếu).</li>
+     *   <li>Kiểm tra tất cả ghế phải ở trạng thái {@code AVAILABLE}.</li>
+     * </ul>
+     *
+     * @param showtimeId ID của suất chiếu chứa các ghế
+     * @param seatIds    danh sách ID ghế cần khoá (tối đa 8, không được rỗng)
+     * @return danh sách {@link ShowtimeSeat} đã được khoá, sẵn sàng để giữ chỗ
+     * @throws IllegalArgumentException    nếu danh sách ghế rỗng hoặc vượt quá 8
+     * @throws ResourceNotFoundException   nếu có ghế không tồn tại hoặc không thuộc suất chiếu
+     * @throws ConflictException           nếu có ghế không ở trạng thái AVAILABLE
+     */
     @Transactional
     public List<ShowtimeSeat> lockSelectedShowtimeSeats(Long showtimeId, List<Long> seatIds) {
         // Check showtimeSeat
@@ -193,7 +258,19 @@ public class BookingService {
         return lockedSeats;
     }
 
-    // hàm hash request
+    /**
+     * Sinh chuỗi hash SHA-256 đại diện cho nội dung request đặt vé.
+     *
+     * <p>Hash được tạo từ chuỗi {@code "showtimeId:seatId1,seatId2,..."} (seatIds đã được
+     * sắp xếp tăng dần và loại bỏ trùng lặp). Dùng để so sánh nhanh khi kiểm tra
+     * idempotency – nếu client gửi lại cùng idempotencyKey nhưng payload khác (khác
+     * showtime hoặc danh sách ghế), hash sẽ khác nhau → phát hiện xung đột.</p>
+     *
+     * @param showtimeId ID suất chiếu
+     * @param seatIds    danh sách ID ghế
+     * @return chuỗi hex 64 ký tự (SHA-256) đại diện cho nội dung request
+     * @throws RuntimeException nếu thuật toán SHA-256 không khả dụng (trường hợp hiếm gặp)
+     */
     private String generateRequestHash(Long showtimeId, List<Long> seatIds) {
         List<Long> sortedSeatIds = seatIds.stream().distinct().sorted().toList();
 
@@ -211,7 +288,16 @@ public class BookingService {
         }
     }
 
-    // hàm lấy các seat cho Booking
+    /**
+     * Chuyển đổi danh sách {@link BookingSeat} của một booking thành danh sách
+     * {@link BookingSeatResponse} để trả về cho client.
+     *
+     * <p>Mỗi BookingSeatResponse chứa: ID ghế trong suất chiếu, nhãn ghế (ví dụ "A5"),
+     * loại ghế (VIP, STANDARD,...) và giá vé tại thời điểm đặt.</p>
+     *
+     * @param booking đối tượng Booking cần lấy thông tin ghế
+     * @return danh sách {@link BookingSeatResponse} chứa thông tin các ghế đã đặt
+     */
     private List<BookingSeatResponse> seatResponses(Booking booking) {
         return booking.getBookingSeats().stream()
                 .map(seat -> new BookingSeatResponse(
