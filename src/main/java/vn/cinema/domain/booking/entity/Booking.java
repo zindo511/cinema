@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import vn.cinema.domain.common.entity.BaseAuditEntity;
 import vn.cinema.domain.common.exception.BookingExpirationNotReachedException;
+import vn.cinema.domain.common.exception.BookingExpiredException;
 import vn.cinema.domain.common.exception.InvalidBookingStatusException;
 import vn.cinema.domain.showtime.entity.Showtime;
 
@@ -69,10 +70,6 @@ public class Booking extends BaseAuditEntity {
     @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookingSeat> bookingSeats;
 
-    public void expire() {
-        expire(Instant.now());
-    }
-
     public void expire(Instant now) {
         requireStatus(BookingStatus.PENDING, "expire");
         if (expiresAt.isAfter(now)) {
@@ -91,6 +88,13 @@ public class Booking extends BaseAuditEntity {
             throw new InvalidBookingStatusException("cancel", status);
         }
         status = BookingStatus.CANCELLED;
+    }
+
+    public void ensurePayable(Instant now) {
+        requireStatus(BookingStatus.PENDING, "ensurePayable");
+        if (!expiresAt.isAfter(now)) {
+            throw new BookingExpiredException(expiresAt);
+        }
     }
 
     // PRIVATE HELPER

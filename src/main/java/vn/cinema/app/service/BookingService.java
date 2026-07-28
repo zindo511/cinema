@@ -175,9 +175,7 @@ public class BookingService {
             booking.expire(now);
 
             // ShowtimeSeat: HELD -> AVAILABLE
-            booking.getBookingSeats().forEach(bookingSeat -> {
-                bookingSeat.getShowtimeSeat().release();
-            });
+            booking.getBookingSeats().forEach(bookingSeat -> bookingSeat.getShowtimeSeat().release());
         });
 
         return expiredBooking.size();

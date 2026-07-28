@@ -7,7 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.cinema.domain.showtime.entity.ShowtimeSeat;
+import vn.cinema.domain.showtime.entity.ShowtimeSeatStatus;
 
+import java.time.Instant;
 import java.util.List;
 
 @Repository

@@ -24,3 +24,16 @@ cinema:
 jwt:
   secret: ${JWT_SECRET}
   expiration-ms: 900000 # 15 phút
+
+scheduler:
+  booking-expiration:
+    initial-delay: 10000
+    fixed-delay: 30000
+
+vnpay:
+  version: 2.1.0
+  tmn-code: ${YOUR_TMN_CODE}
+  hash-secret: ${YOUR_HASH_SECRET}
+  pay-url: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+  return-url: http://localhost:8080/api/v1/payments/vnpay/return
+  ipn-url: http://localhost:8080/api/v1/payments/vnpay/ipn
