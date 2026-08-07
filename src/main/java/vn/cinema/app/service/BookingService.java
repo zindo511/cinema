@@ -126,7 +126,7 @@ public class BookingService {
                 .showtime(showtime)
                 .status(BookingStatus.PENDING)
                 .totalAmount(totalAmount)
-                .expiresAt(now.plus(Duration.ofMinutes(10)))
+                .expiresAt(now.plus(Duration.ofMinutes(15)))
                 .idempotencyKey(idempotencyKey)
                 .requestHash(requestHash)
                 .build();

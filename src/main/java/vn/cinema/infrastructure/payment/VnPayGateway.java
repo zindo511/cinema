@@ -8,6 +8,7 @@ import vn.cinema.infrastructure.utility.VnPayUtil;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -25,7 +26,7 @@ public class VnPayGateway implements PaymentGateway {
     private final VnPayProperties vnPayProperties;
 
     @Override
-    public String createPaymentUrl(BigDecimal amount, String orderInfo, String ipAddress, String txnRef) {
+    public String createPaymentUrl(BigDecimal amount, String orderInfo, String ipAddress, String txnRef, Instant expiresAt) {
         LocalDateTime now = LocalDateTime.now(VN_ZONE);
 
         Map<String, String> params = new HashMap<>();
@@ -46,7 +47,9 @@ public class VnPayGateway implements PaymentGateway {
         params.put("vnp_ReturnUrl", vnPayProperties.getReturnUrl());
         params.put("vnp_IpAddr", ipAddress);
         params.put("vnp_CreateDate", now.format(FORMATTER));
-        params.put("vnp_ExpireDate", now.plusMinutes(15).format(FORMATTER));
+
+        LocalDateTime expireDate = LocalDateTime.ofInstant(expiresAt, VN_ZONE);
+        params.put("vnp_ExpireDate", expireDate.format(FORMATTER));
 
         String query = VnPayUtil.buildQueryUrl(params);
 

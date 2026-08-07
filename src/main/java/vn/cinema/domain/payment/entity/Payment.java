@@ -78,11 +78,42 @@ public class Payment extends BaseAuditEntity {
     private Instant paidAt;
 
     public void markFailed(String reason) {
+        requirePending();
+        status = PaymentStatus.FAILED;
+        failureReason = reason;
+    }
+
+    public boolean isPending() {
+        return status == PaymentStatus.PENDING;
+    }
+
+    public void markFailed(String responseCode, String failureReason) {
+        requirePending();
+        this.status = PaymentStatus.FAILED;
+        this.responseCode = responseCode;
+        this.failureReason = failureReason;
+    }
+
+    public void markSuccess(String transactionNo, String responseCode, String bankCode, Instant payDate) {
+        requirePending();
+        this.status = PaymentStatus.SUCCESS;
+        this.providerTransactionNo = transactionNo;
+        this.responseCode = responseCode;
+        this.bankCode = bankCode;
+        this.paidAt = payDate;
+    }
+
+    public void requirePending() {
         if (status != PaymentStatus.PENDING) {
             throw new IllegalStateException("Only PENDING payments can be marked as FAILED. Current status: " + status);
         }
+    }
 
-        status = PaymentStatus.FAILED;
+    public void markRefundPending(String reason) {
+        if (status != PaymentStatus.SUCCESS) {
+            throw new IllegalStateException("Only SUCCESS payments can be marked REFUND_PENDING");
+        }
+        status = PaymentStatus.REFUND_PENDING;
         failureReason = reason;
     }
 }
