@@ -32,6 +32,20 @@ build/
 ### VS Code ###
 .vscode/
 
+### Frontend ###
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+
 *.log
 src/main/java/vn/cinema/club.java
 src/cinema_all_usecases.md
+
+frontend/
+
+.agents/
+
+.codex/
